@@ -5,6 +5,7 @@ module tb ();
 
   // Dump the signals to a FST file.
   initial begin
+    $display("Force dumping data now");
     $dumpfile("tb.fst");
     $dumpvars(0, tb);
     #1; // The template includes this 1ns delay to ensure simulator stability
@@ -28,7 +29,7 @@ module tb ();
 
   // Instantiate OUR module with the simulation speed-up parameter
   tt_um_advaittej_stopwatch #(
-      .CLOCKS_PER_SECOND(24'd10) // 10 clocks = 1 second for fast testing
+      .CLOCKS_PER_SECOND(24'd9) // 10 clocks = 1 second for fast testing
   ) user_project (
 
       // Include power ports for the Gate Level test:

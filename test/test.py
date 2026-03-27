@@ -1,6 +1,6 @@
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import ClockCycles, FallingEdge
 
 # REFERENCE MODEL (Golden Vector Generator)
 class StopwatchModel:
@@ -63,6 +63,7 @@ async def test_stopwatch_golden_vectors(dut):
     # Test 15 'seconds' (Our tb.v overrides 1 second to equal 10 clocks)
     for simulated_second in range(15):
         await ClockCycles(dut.clk, 10)
+        await FallingEdge(dut.clk)
         model.tick()
         
         expected = model.get_expected_output()
@@ -79,6 +80,7 @@ async def test_stopwatch_golden_vectors(dut):
     # Wait 5 'seconds' to ensure it doesn't count while paused
     for _ in range(5):
         await ClockCycles(dut.clk, 10)
+        await FallingEdge(dut.clk)
         model.tick()
         
     assert int(dut.uo_out.value) == model.get_expected_output(), "Pause failed! HW kept counting."
