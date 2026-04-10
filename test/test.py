@@ -37,7 +37,7 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, ClockCycles, FallingEdge
-from cocotb.result import TestFailure
+
 
 # ============================================================
 # REFERENCE MODEL — Pure Python version of your chip's logic
