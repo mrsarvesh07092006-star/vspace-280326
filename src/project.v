@@ -268,7 +268,15 @@ always @(posedge clk or posedge reset) begin
         ramp        <= 8'd0;
     end else if (sub_counter == sub_period - 18'd1) begin
         sub_counter <= 18'd0;
-        ramp        <= ramp + 8'd1; // Increment ramp — wraps at 255→0 naturally
+        // Clamp ramp at 255 — do NOT let it wrap to 0 mid-period.
+        // Without clamping, at 10 kHz (period=1000, sub_period=3) the ramp
+        // completes 0→255 in 768 ticks then starts a 2nd partial cycle 0→77,
+        // causing measured duty of 61.6% instead of the expected 50%.
+        // Clamping at 255 keeps the output LOW (ramp=255 >= duty) for the
+        // remaining ticks until period_done resets everything correctly.
+        if (ramp < 8'd255)
+            ramp <= ramp + 8'd1;
+        // else: ramp stays at 255 (clamped)
     end else begin
         sub_counter <= sub_counter + 18'd1;
     end
