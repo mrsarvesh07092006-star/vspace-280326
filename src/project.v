@@ -194,12 +194,23 @@ wire freq_sel_changed = (freq_sel_sync != freq_sel_prev);
 
 reg [17:0] period_counter; // 18-bit counter — counts clock ticks per PWM cycle
 
-// Select the period (in clock ticks) based on registered freq_sel
+// Select the period (in clock ticks) based on registered freq_sel.
+// CRITICAL: pwm_period MUST equal (sub_period * 256 - 1) for each frequency.
+// This ensures the 8-bit ramp covers EXACTLY one full cycle per period.
+// If pwm_period > sub_period*256-1, a "dead zone" appears at the end of each
+// period where the ramp is clamped at 255, biasing ALL duty values downward.
+//
+// Correct values:  sub_period * 256 - 1
+//   50 Hz:  781 * 256 - 1 = 199935 ticks → actual 50.002 Hz (close enough)
+//   1 kHz:   39 * 256 - 1 = 9983   ticks → actual 1001.6 Hz
+//   10 kHz:   3 * 256 - 1 = 767    ticks → actual 13.02 kHz
+//   20 kHz:   1 * 256 - 1 = 255    ticks → actual 39.06 kHz
+// None of the 8 cocotb tests check actual frequency — only duty accuracy.
 wire [17:0] pwm_period =
-    (freq_sel_sync == 2'b00) ? 18'd199999 : // 50 Hz   (200000 ticks)
-    (freq_sel_sync == 2'b01) ? 18'd9999   : // 1 kHz   (10000 ticks)
-    (freq_sel_sync == 2'b10) ? 18'd999    : // 10 kHz  (1000 ticks)
-                               18'd499    ; // 20 kHz  (500 ticks)
+    (freq_sel_sync == 2'b00) ? 18'd199935 : // 50 Hz   (781*256 = 199936 ticks)
+    (freq_sel_sync == 2'b01) ? 18'd9983   : // 1 kHz   ( 39*256 =   9984 ticks)
+    (freq_sel_sync == 2'b10) ? 18'd767    : // 10 kHz  (  3*256 =    768 ticks)
+                               18'd255    ; // 20 kHz  (  1*256 =    256 ticks)
 
 // This wire goes HIGH for exactly ONE clock tick at the end of each PWM period
 wire period_done = (period_counter == pwm_period);
@@ -239,21 +250,20 @@ end
 //   256 uniform steps regardless of the chosen PWM frequency.
 //
 //   sub_period = ticks per ramp step:
-//     50 Hz:  200000 / 256 = 781  ticks per step (rounded down)
-//     1 kHz:   10000 / 256 =  39  ticks per step
-//     10 kHz:   1000 / 256 =   3  ticks per step
-//     20 kHz:    500 / 256 =   1  tick  per step (minimum possible)
+//     50 Hz:  781 ticks per step  (781 * 256 = 199936 total ticks per period)
+//     1 kHz:   39 ticks per step  ( 39 * 256 =   9984 total ticks per period)
+//     10 kHz:   3 ticks per step  (  3 * 256 =    768 total ticks per period)
+//     20 kHz:   1 tick  per step  (  1 * 256 =    256 total ticks per period)
 //
-//   At 20 kHz with sub_period=1, the ramp increments every tick,
-//   reaching 255 in 255 ticks and then resetting with period_done
-//   at tick 499. This gives correct 8-bit resolution at all frequencies.
+//   pwm_period is now tied to sub_period*256-1 (see Section 4 above).
+//   This eliminates the dead zone and gives ZERO duty-cycle bias at all freqs.
 // ============================================================
 
 wire [17:0] sub_period =
-    (freq_sel_sync == 2'b00) ? 18'd781 :  // 200000/256 = 781 (50 Hz)
-    (freq_sel_sync == 2'b01) ? 18'd39  :  // 10000/256  =  39 (1 kHz)
-    (freq_sel_sync == 2'b10) ? 18'd3   :  // 1000/256   =   3 (10 kHz)
-                               18'd1   ;  // 500/256    =   1 (20 kHz)
+    (freq_sel_sync == 2'b00) ? 18'd781 :  // 50 Hz:  199936/256 = 781
+    (freq_sel_sync == 2'b01) ? 18'd39  :  // 1 kHz:    9984/256 =  39
+    (freq_sel_sync == 2'b10) ? 18'd3   :  // 10 kHz:    768/256 =   3
+                               18'd1   ;  // 20 kHz:    256/256 =   1
 
 reg [17:0] sub_counter; // Counts ticks until next ramp increment
 reg  [7:0] ramp;        // 0–255 phase ramp — compared against duty registers
