@@ -3,7 +3,7 @@
 [![gds](../../actions/workflows/gds.yaml/badge.svg)](../../actions/workflows/gds.yaml) [![docs](../../actions/workflows/docs.yaml/badge.svg)](../../actions/workflows/docs.yaml) [![test](../../actions/workflows/test.yaml/badge.svg)](../../actions/workflows/test.yaml) [![fpga](../../actions/workflows/fpga.yaml/badge.svg)](../../actions/workflows/fpga.yaml)
 
 **A dedicated silicon PWM generator for deterministic robotic motor control.**  
-**Platform:** Tiny Tapeout (sky130A, 1×1 tile) · **Author:** Sarvesh S (VIT Vellore, 24BVD0092)
+**Platform:** Tiny Tapeout (sky130A, 1×1 tile) · **Author:** Sarvesh S (VIT Vellore, 24BVD0092),Pradeep P (24BVD0218)
 
 ---
 
